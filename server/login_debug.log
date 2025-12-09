@@ -1,0 +1,18 @@
+2025-12-08T09:25:43.971Z: Login attempt for: jislam605@gmail.com
+2025-12-08T09:25:43.972Z: Password provided (length): 8
+2025-12-08T09:25:43.977Z: User found: jislam605@gmail.com, ID: 1
+2025-12-08T09:25:43.978Z: Stored hash: $2a$10$tqt/OjuKozAmEXvjBHZwMuJVzqyjOZD.zkci78IseyqaUUybts3bO
+2025-12-08T09:25:44.045Z: Password match result: true
+2025-12-08T09:25:44.046Z: Login successful
+2025-12-08T09:25:58.614Z: Login attempt for: adminapi@example.com
+2025-12-08T09:25:58.616Z: Password provided (length): 8
+2025-12-08T09:25:58.622Z: User found: adminapi@example.com, ID: 3
+2025-12-08T09:25:58.623Z: Stored hash: $2a$10$Gun/f3c1TyibqSnUbQeJn.7O4VLi7tNRYCJp/Ez7n0dsJLmRK4xwG
+2025-12-08T09:25:58.688Z: Password match result: true
+2025-12-08T09:25:58.689Z: Login successful
+2025-12-08T09:26:46.527Z: Login attempt for: adminapi@example.com
+2025-12-08T09:26:46.527Z: Password provided (length): 8
+2025-12-08T09:26:46.529Z: User found: adminapi@example.com, ID: 3
+2025-12-08T09:26:46.530Z: Stored hash: $2a$10$Gun/f3c1TyibqSnUbQeJn.7O4VLi7tNRYCJp/Ez7n0dsJLmRK4xwG
+2025-12-08T09:26:46.586Z: Password match result: true
+2025-12-08T09:26:46.587Z: Login successful
