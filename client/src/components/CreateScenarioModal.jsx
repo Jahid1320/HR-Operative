@@ -56,6 +56,7 @@ const CreateScenarioModal = ({ onClose, onCreated }) => {
                 title: formData.title,
                 description: formData.description,
                 publishDate: combinedDate,
+                publishNow: formData.publishNow,
                 options: validOptions
             };
 

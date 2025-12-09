@@ -1,13 +1,15 @@
 const { Scenario, Option, User, UserResponse, sequelize } = require('../models');
 
 exports.createScenario = async (req, res) => {
-    const { title, description, publishDate, options } = req.body;
+    const { title, description, publishDate, options, publishNow } = req.body;
 
     try {
+        const finalPublishDate = publishNow ? new Date() : publishDate;
+
         const scenario = await Scenario.create({
             title,
             description,
-            publishDate
+            publishDate: finalPublishDate
         });
 
         if (options && options.length > 0) {
