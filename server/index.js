@@ -20,10 +20,6 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/news', require('./routes/news'));
 
 // Basic Route
-app.get('/', (req, res) => {
-    res.send('Global Payroll Crisis Simulator API is running');
-});
-
 // Serve Frontend in Production/Cloud
 if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) {
     const path = require('path');
@@ -31,6 +27,11 @@ if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) {
 
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+    });
+} else {
+    // Basic Route for Development
+    app.get('/', (req, res) => {
+        res.send('Global Payroll Crisis Simulator API is running');
     });
 }
 
