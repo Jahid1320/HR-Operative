@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }) => {
         const res = await axios.post('/api/auth/register', userData);
         localStorage.setItem('token', res.data.token);
         axios.defaults.headers.common['x-auth-token'] = res.data.token;
+        const userRes = await axios.get('/api/auth/me');
         setUser(userRes.data);
     };
 
