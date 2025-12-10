@@ -3,55 +3,43 @@ const { Op } = require('sequelize');
 
 exports.getDailyScenario = async (req, res) => {
     try {
-        console.log('[DEBUG] Fetching daily scenario...');
-        console.log('[DEBUG] Server Time:', new Date().toISOString());
-        console.log('[DEBUG] User ID:', req.user.id);
+        console.log('[DEBUG] Fetching user scenarios...');
+        const userId = req.user.id;
 
-        // Logic: Get scenario where publishDate is today or latest before today
-        const scenario = await Scenario.findOne({
+        // 1. Get all IDs of scenarios the user has already responded to
+        const userResponses = await UserResponse.findAll({
+            where: { userId },
+            attributes: ['scenarioId']
+        });
+        const respondedScenarioIds = userResponses.map(r => r.scenarioId);
+
+        // 2. Fetch all active scenarios (publishDate <= now) that are NOT in the responded list
+        const activeScenarios = await Scenario.findAll({
             where: {
                 publishDate: {
-                    [Op.lte]: new Date() // Less than or equal to now
+                    [Op.lte]: new Date()
+                },
+                id: {
+                    [Op.notIn]: respondedScenarioIds.length > 0 ? respondedScenarioIds : [-1] // -1 to avoid empty array syntax error if Op.notIn expects valid list
                 }
             },
             order: [['publishDate', 'DESC']],
             include: [{
                 model: Option,
                 as: 'options',
-                attributes: ['id', 'text'] // Hide impacts!
+                attributes: ['id', 'text']
             }]
         });
 
-        if (scenario) {
-            console.log(`[DEBUG] Found active scenario: ID ${scenario.id}, Title: "${scenario.title}"`);
-            console.log(`[DEBUG] Publish Date: ${scenario.publishDate}`);
-        } else {
-            console.log('[DEBUG] No active scenario found matching criteria (publishDate <= now).');
-        }
+        console.log(`[DEBUG] Found ${activeScenarios.length} active scenarios for user ${userId}`);
 
-        if (!scenario) {
-            return res.status(404).json({ msg: 'No active scenario available' });
-        }
-
-        // Check if user has already responded
-        const response = await UserResponse.findOne({
-            where: {
-                userId: req.user.id,
-                scenarioId: scenario.id
-            }
+        // Return the list
+        // Note: responded is effectively 'false' for all of these since we filtered them out.
+        res.json({
+            scenarios: activeScenarios,
+            count: activeScenarios.length
         });
 
-        if (response) {
-            console.log(`[DEBUG] User ${req.user.id} has already responded to scenario ${scenario.id}.`);
-            return res.json({
-                scenario,
-                responded: true,
-                selectedOptionId: response.optionId
-            });
-        }
-
-        console.log(`[DEBUG] User ${req.user.id} has NOT responded to scenario ${scenario.id}.`);
-        res.json({ scenario, responded: false });
     } catch (err) {
         console.error('[ERROR] in getDailyScenario:', err);
         res.status(500).json({ msg: 'Server error: ' + err.message });

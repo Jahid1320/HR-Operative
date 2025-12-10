@@ -5,9 +5,9 @@ import LeaderboardWidget from '../components/LeaderboardWidget';
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
-    const [scenario, setScenario] = useState(null);
+    const [scenarios, setScenarios] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [responded, setResponded] = useState(false);
     const [message, setMessage] = useState('');
     const [leaderboard, setLeaderboard] = useState([]);
     const [history, setHistory] = useState([]);
@@ -21,11 +21,10 @@ const Dashboard = () => {
                     axios.get('/api/auth/history')
                 ]);
 
-                if (scenarioRes.data.scenario) {
-                    setScenario(scenarioRes.data.scenario);
-                    setResponded(scenarioRes.data.responded);
+                if (scenarioRes.data.scenarios) {
+                    setScenarios(scenarioRes.data.scenarios);
                 } else {
-                    setScenario(null);
+                    setScenarios([]);
                 }
                 setLeaderboard(leaderboardRes.data);
                 setHistory(historyRes.data);
@@ -33,7 +32,6 @@ const Dashboard = () => {
                 console.error("Failed to fetch dashboard data", err);
                 let errorMsg = "Unknown error";
                 if (err.response) {
-                    // Check if data is object with msg, or just a string
                     if (typeof err.response.data === 'object' && err.response.data.msg) {
                         errorMsg = err.response.data.msg;
                     } else if (typeof err.response.data === 'string') {
@@ -53,24 +51,54 @@ const Dashboard = () => {
     }, []);
 
     const handleOptionSelect = async (optionId) => {
+        if (scenarios.length === 0) return;
+        const currentScenario = scenarios[currentIndex];
+
         try {
             await axios.post('/api/scenario/respond', {
-                scenarioId: scenario.id,
+                scenarioId: currentScenario.id,
                 optionId
             });
-            setResponded(true);
-            setMessage('Response Protocol Initiated. Awaiting Impact Analysis...');
+
+            // Refresh history
+            const historyRes = await axios.get('/api/auth/history');
+            setHistory(historyRes.data);
+
+            // Fetch latest leaderboard
+            const leaderboardRes = await axios.get('/api/auth/leaderboard');
+            setLeaderboard(leaderboardRes.data);
+
+            // Remove current scenario from list
+            const newScenarios = scenarios.filter(s => s.id !== currentScenario.id);
+            setScenarios(newScenarios);
+
+            // Adjust index if needed
+            if (currentIndex >= newScenarios.length) {
+                setCurrentIndex(Math.max(0, newScenarios.length - 1));
+            }
+
+            setMessage('Response Protocol Initiated. Impact Analysis Complete.');
+            setTimeout(() => setMessage(''), 3000); // Clear message after delay
+
         } catch (err) {
             console.error("Failed to submit response", err);
-            // If error is 400, maybe they already responded
-            if (err.response && err.response.status === 400) {
-                setResponded(true);
-                setMessage('You have already responded to this crisis.');
-            } else {
-                setMessage('Transmission Failed. Retry connection.');
-            }
+            setMessage('Transmission Failed. Retry connection.');
         }
     };
+
+    const handleNext = () => {
+        if (currentIndex < scenarios.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        }
+    };
+
+    const handlePrev = () => {
+        if (currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+        }
+    };
+
+    const currentScenario = scenarios.length > 0 ? scenarios[currentIndex] : null;
 
     return (
         <div className="min-h-screen bg-crisis-dark text-white font-sans">
@@ -124,52 +152,63 @@ const Dashboard = () => {
 
                 {/* Middle/Right: Scenario & History */}
                 <div className="lg:col-span-2 space-y-6">
-                    {message && !scenario && !loading && (
-                        <div className="bg-red-900/50 border border-red-500 p-4 rounded text-red-200 mb-4 font-mono text-sm">
+                    {message && (
+                        <div className={`p-4 rounded mb-4 font-mono text-sm border ${message.includes("SYSTEM FAILURE") ? "bg-red-900/50 border-red-500 text-red-200" : "bg-blue-900/50 border-blue-500 text-blue-200"}`}>
                             {message}
                         </div>
                     )}
                     {loading ? (
                         <div className="text-center p-20 text-gray-400 animate-pulse">Scanning for incoming threats...</div>
-                    ) : scenario ? (
+                    ) : currentScenario ? (
                         <div className="bg-gradient-to-br from-crisis-slate to-gray-900 border border-gray-700 rounded-xl p-8 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                <svg className="w-32 h-32 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" /></svg>
+                            <div className="flex justify-between items-start mb-6">
+                                <h3 className="text-red-500 font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                                    Incoming Scenario ({currentIndex + 1} / {scenarios.length})
+                                </h3>
+                                {/* Navigation Arrows */}
+                                {scenarios.length > 1 && (
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={handlePrev}
+                                            disabled={currentIndex === 0}
+                                            className={`p-2 rounded border border-gray-600 ${currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-700'}`}
+                                        >
+                                            &lt;
+                                        </button>
+                                        <button
+                                            onClick={handleNext}
+                                            disabled={currentIndex === scenarios.length - 1}
+                                            className={`p-2 rounded border border-gray-600 ${currentIndex === scenarios.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-700'}`}
+                                        >
+                                            &gt;
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            <h3 className="text-red-500 font-bold tracking-widest uppercase mb-2 text-sm flex items-center gap-2">
-                                <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-                                Incoming Scenarios
-                            </h3>
-                            <h2 className="text-3xl font-bold text-white mb-4">{scenario.title}</h2>
+                            <h2 className="text-3xl font-bold text-white mb-4">{currentScenario.title}</h2>
                             <p className="text-gray-300 mb-8 max-w-lg leading-relaxed">
-                                {scenario.description}
+                                {currentScenario.description}
                             </p>
 
-                            {!responded ? (
-                                <div className="space-y-3">
-                                    <p className="text-sm text-gray-400 uppercase tracking-widest mb-2 font-bold">Select Response Protocol:</p>
-                                    {scenario.options && scenario.options.length > 0 ? (
-                                        scenario.options.map(option => (
-                                            <button
-                                                key={option.id}
-                                                onClick={() => handleOptionSelect(option.id)}
-                                                className="w-full text-left bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded p-4 transition flex items-center justify-between group"
-                                            >
-                                                <span className="font-semibold text-gray-200 group-hover:text-white">{option.text}</span>
-                                                <span className="text-xs text-gray-500 group-hover:text-gray-300 border border-gray-600 px-2 py-1 rounded">EXECUTE</span>
-                                            </button>
-                                        ))
-                                    ) : (
-                                        <p className="text-yellow-500 text-sm">No response protocols available.</p>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="bg-green-900/20 border border-green-700 p-6 rounded text-center">
-                                    <h4 className="text-green-400 font-bold text-xl mb-2">Response Submitted</h4>
-                                    <p className="text-gray-300">{message || "Kudos! You have completed this scenario. Stay tuned for the next episode."}</p>
-                                </div>
-                            )}
+                            <div className="space-y-3">
+                                <p className="text-sm text-gray-400 uppercase tracking-widest mb-2 font-bold">Select Response Protocol:</p>
+                                {currentScenario.options && currentScenario.options.length > 0 ? (
+                                    currentScenario.options.map(option => (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => handleOptionSelect(option.id)}
+                                            className="w-full text-left bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded p-4 transition flex items-center justify-between group"
+                                        >
+                                            <span className="font-semibold text-gray-200 group-hover:text-white">{option.text}</span>
+                                            <span className="text-xs text-gray-500 group-hover:text-gray-300 border border-gray-600 px-2 py-1 rounded">EXECUTE</span>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <p className="text-yellow-500 text-sm">No response protocols available.</p>
+                                )}
+                            </div>
                         </div>
                     ) : (
                         <div className="bg-gray-800 p-10 rounded border border-gray-700 text-center shadow-lg">
