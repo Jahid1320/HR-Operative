@@ -31,6 +31,8 @@ const Dashboard = () => {
                 setHistory(historyRes.data);
             } catch (err) {
                 console.error("Failed to fetch dashboard data", err);
+                const errorMsg = err.response?.data?.msg || err.message || "Unknown error";
+                setMessage(`SYSTEM FAILURE: ${errorMsg}. Status: ${err.response?.status}`);
             } finally {
                 setLoading(false);
             }
@@ -110,6 +112,11 @@ const Dashboard = () => {
 
                 {/* Middle/Right: Scenario & History */}
                 <div className="lg:col-span-2 space-y-6">
+                    {message && !scenario && !loading && (
+                        <div className="bg-red-900/50 border border-red-500 p-4 rounded text-red-200 mb-4 font-mono text-sm">
+                            {message}
+                        </div>
+                    )}
                     {loading ? (
                         <div className="text-center p-20 text-gray-400 animate-pulse">Scanning for incoming threats...</div>
                     ) : scenario ? (

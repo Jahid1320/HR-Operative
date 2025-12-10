@@ -3,14 +3,11 @@ const { Op } = require('sequelize');
 
 exports.getDailyScenario = async (req, res) => {
     try {
-        console.log('Fetching daily scenario...');
-        // Logic: Get scenario where publishDate is today or latest before today
-        // For MVP/Demo: Just get the first one or a specific one if no date logic is strictly enforced yet
-        // Strict date logic:
-        // const today = new Date().toISOString().split('T')[0];
+        console.log('[DEBUG] Fetching daily scenario...');
+        console.log('[DEBUG] Server Time:', new Date().toISOString());
+        console.log('[DEBUG] User ID:', req.user.id);
 
-        // Demo Logic: Get the most recent active scenario
-        // Get the most recent active scenario where publishDate is in the past
+        // Logic: Get scenario where publishDate is today or latest before today
         const scenario = await Scenario.findOne({
             where: {
                 publishDate: {
@@ -26,9 +23,10 @@ exports.getDailyScenario = async (req, res) => {
         });
 
         if (scenario) {
-            console.log(`Found scenario: ${scenario.title}, Options: ${scenario.options ? scenario.options.length : 0}`);
+            console.log(`[DEBUG] Found active scenario: ID ${scenario.id}, Title: "${scenario.title}"`);
+            console.log(`[DEBUG] Publish Date: ${scenario.publishDate}`);
         } else {
-            console.log('No scenario found matching criteria.');
+            console.log('[DEBUG] No active scenario found matching criteria (publishDate <= now).');
         }
 
         if (!scenario) {
@@ -44,6 +42,7 @@ exports.getDailyScenario = async (req, res) => {
         });
 
         if (response) {
+            console.log(`[DEBUG] User ${req.user.id} has already responded to scenario ${scenario.id}.`);
             return res.json({
                 scenario,
                 responded: true,
@@ -51,10 +50,11 @@ exports.getDailyScenario = async (req, res) => {
             });
         }
 
+        console.log(`[DEBUG] User ${req.user.id} has NOT responded to scenario ${scenario.id}.`);
         res.json({ scenario, responded: false });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        console.error('[ERROR] in getDailyScenario:', err);
+        res.status(500).send('Server error: ' + err.message);
     }
 };
 
