@@ -54,7 +54,7 @@ exports.getDailyScenario = async (req, res) => {
         res.json({ scenario, responded: false });
     } catch (err) {
         console.error('[ERROR] in getDailyScenario:', err);
-        res.status(500).send('Server error: ' + err.message);
+        res.status(500).json({ msg: 'Server error: ' + err.message });
     }
 };
 

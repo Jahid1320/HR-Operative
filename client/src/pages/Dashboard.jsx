@@ -31,8 +31,20 @@ const Dashboard = () => {
                 setHistory(historyRes.data);
             } catch (err) {
                 console.error("Failed to fetch dashboard data", err);
-                const errorMsg = err.response?.data?.msg || err.message || "Unknown error";
-                setMessage(`SYSTEM FAILURE: ${errorMsg}. Status: ${err.response?.status}`);
+                let errorMsg = "Unknown error";
+                if (err.response) {
+                    // Check if data is object with msg, or just a string
+                    if (typeof err.response.data === 'object' && err.response.data.msg) {
+                        errorMsg = err.response.data.msg;
+                    } else if (typeof err.response.data === 'string') {
+                        errorMsg = err.response.data;
+                    } else {
+                        errorMsg = `Status ${err.response.status}`;
+                    }
+                } else if (err.message) {
+                    errorMsg = err.message;
+                }
+                setMessage(`SYSTEM FAILURE: ${errorMsg}`);
             } finally {
                 setLoading(false);
             }

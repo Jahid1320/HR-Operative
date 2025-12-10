@@ -40,7 +40,7 @@ exports.register = async (req, res) => {
         );
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error in Register: ' + err.message });
     }
 };
 
@@ -78,7 +78,7 @@ exports.login = async (req, res) => {
         );
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error in Login: ' + err.message });
     }
 };
 
@@ -90,7 +90,7 @@ exports.getMe = async (req, res) => {
         res.json(user);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error in Me: ' + err.message });
     }
 };
 
@@ -107,7 +107,7 @@ exports.getHistory = async (req, res) => {
         res.json(history);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error in History: ' + err.message });
     }
 };
 
@@ -119,15 +119,15 @@ exports.getLeaderboard = async (req, res) => {
             attributes: [
                 'name',
                 'company',
-                [sequelize.literal('(complianceScore + efficiencyScore + satisfactionScore)'), 'totalScore']
+                [sequelize.literal('("complianceScore" + "efficiencyScore" + "satisfactionScore")'), 'totalScore']
             ],
-            order: [[sequelize.literal('totalScore'), 'DESC']],
+            order: [[sequelize.literal('"totalScore"'), 'DESC']],
             limit: 10
         });
         res.json(leaderboard);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error in Leaderboard: ' + err.message });
     }
 };
 
@@ -158,7 +158,7 @@ exports.updateProfile = async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error in UpdateProfile: ' + err.message });
     }
 };
 
@@ -183,6 +183,6 @@ exports.updatePassword = async (req, res) => {
         res.json({ msg: 'Password updated successfully' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error in UpdatePassword: ' + err.message });
     }
 };
